@@ -1,5 +1,7 @@
 import argparse
 import json
+import logging
+import pprint
 import requests
 
 
@@ -19,7 +21,14 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--email', nargs='?')
     parser.add_argument('--password', nargs='?')
+    parser.add_argument('--verbose', action='store_true')
     args = parser.parse_args()
+    if args.verbose:
+        logging.basicConfig(level=logging.DEBUG)
+
+    pp = pprint.PrettyPrinter(indent=4)
+
     s = session(args.email, args.password)
+    pp.pprint(s)
     with open('.gitlabrc', 'w') as file:
         json.dump(s, file)
