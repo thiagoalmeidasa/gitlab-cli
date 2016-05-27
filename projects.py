@@ -1,7 +1,6 @@
 import argparse
 import json
 import logging
-import pprint
 import requests
 
 from session import get_token
@@ -9,10 +8,21 @@ from session import get_token
 global token
 
 
-def list_projects(token, **kwargs):
+def list_project(id):
     h = {'PRIVATE-TOKEN': token}
     url_base = "https://git.mossteam.com.br/api/v3/"
     u = url_base + "projects/"
+    u = u + id
+    logging.debug(u)
+    r = requests.get(u, headers=h)
+    return r.json()
+
+
+def list_projects(token, **kwargs):
+    h = {'PRIVATE-TOKEN': token}
+    url_base = "https://git.mossteam.com.br/api/v3/"
+#    u = url_base + "projects/"
+    u = url_base + "/projects/all"
     u = u + "?"
     if kwargs['archived']:
         u = u + "&archived=true"
@@ -28,20 +38,48 @@ def list_projects(token, **kwargs):
     r = requests.get(u, headers=h)
     return r.json()
 
+
+def print_list_project(json):
+    if isinstance(json, dict):
+        s = '{0:<2}\t{1:<30}\t{2:30}\t{3:60}'.format(
+            json['id'], json['name'], json['owner']['name'], json['web_url'])
+        print(s)
+
+
+def print_list_projects(json):
+    if isinstance(json, dict):
+        s = '{0:<2}\t{1:<30}\t{2:30}\t{3:60}'.format(
+                json['id'], json['name'],
+                json['owner']['name'],
+                json['web_url'])
+        print(s)
+    else:
+        for i in json:
+            s = '{0:<2}\t{1:<30}\t{2:60}'.format(
+                i['id'], i['name'], i['web_url'])
+            print(s)
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--archived', action='store_true')
-    parser.add_argument('--visibility', choices=['public', 'internal', 'private'])
+    parser.add_argument(
+        '--visibility',
+        choices=['public', 'internal', 'private'])
     parser.add_argument('--order-by', choices=['id', 'name', 'updated_at'])
     parser.add_argument('--sort', choices=['asc', 'desc'])
     parser.add_argument('--search', nargs='?')
     parser.add_argument('--verbose', action='store_true')
+    parser.add_argument('--id', nargs='?')
     args = parser.parse_args()
     if args.verbose:
         logging.basicConfig(level=logging.DEBUG)
-    pp = pprint.PrettyPrinter(indent=4)
 
     token = get_token()
-    pp.pprint(list_projects(token, archived=args.archived,
-visibility=args.visibility, order_by=args.order_by, sort=args.sort,
-search=args.search))
+
+    if args.id:
+        print_list_project(list_project(args.id))
+    else:
+        print_list_projects(list_projects(token, archived=args.archived,
+        visibility=args.visibility, order_by=args.order_by, sort=args.sort,
+        search=args.search))
