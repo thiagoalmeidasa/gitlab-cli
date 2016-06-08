@@ -8,6 +8,15 @@ from session import get_token
 global token
 
 
+def list_project_events(id):
+    h = {'PRIVATE-TOKEN': token}
+    url_base = "https://git.mossteam.com.br/api/v3/"
+    u = url_base + "projects/"
+    u = u + id + "/events"
+    logging.debug(u)
+    r = requests.get(u, headers=h)
+    return r.json()
+
 def list_project(id):
     h = {'PRIVATE-TOKEN': token}
     url_base = "https://git.mossteam.com.br/api/v3/"
@@ -22,8 +31,7 @@ def list_projects(token, **kwargs):
     h = {'PRIVATE-TOKEN': token}
     url_base = "https://git.mossteam.com.br/api/v3/"
 #    u = url_base + "projects/"
-    u = url_base + "/projects/all"
-    u = u + "?"
+    u = url_base + "/projects/all?per_page=100"
     if kwargs['archived']:
         u = u + "&archived=true"
     if kwargs['visibility']:
@@ -46,6 +54,13 @@ def print_list_project(json):
         print(s)
 
 
+def print_list_project_events(json):
+    for i in json:
+        s = '{0:<30}\t{1:<30}\t{2:30}'.format(
+            i['target_type'], i['title'], i['target_title'])
+        print(s)
+
+
 def print_list_projects(json):
     if isinstance(json, dict):
         s = '{0:<2}\t{1:<30}\t{2:30}\t{3:60}'.format(
@@ -63,6 +78,7 @@ def print_list_projects(json):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--archived', action='store_true')
+    parser.add_argument('--events', action='store_true')
     parser.add_argument(
         '--visibility',
         choices=['public', 'internal', 'private'])
@@ -77,8 +93,10 @@ if __name__ == '__main__':
 
     token = get_token()
 
-    if args.id:
+    if args.id and not args.events:
         print_list_project(list_project(args.id))
+    elif args.events:
+        print_list_project_events(list_project_events(args.id))
     else:
         print_list_projects(list_projects(token, archived=args.archived,
         visibility=args.visibility, order_by=args.order_by, sort=args.sort,
